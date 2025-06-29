@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// import 'package:book_comic_manager/presentation/screens/home_screen.dart';
-// import 'package:book_comic_manager/presentation/providers/book_comic_provider.dart';
-import 'package:book_comic_manager/di.dart';
+// import 'package:gibidex/presentation/screens/home_screen.dart';
+// import 'package:gibidex/presentation/providers/book_comic_provider.dart';
+import 'package:gibidex/di.dart';
 // import 'package:book_comic_manager/presentation/services/notification_service.dart';
 
 void main() {

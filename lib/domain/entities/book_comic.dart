@@ -4,12 +4,14 @@ class BookComic {
   final String id;
   String title;
   String author;
-  String type; // 'Livro' ou 'Gibi'
+  String type;
   bool isReading;
   bool isWishlist;
   DateTime? startDate;
   DateTime? endDate;
-  String? notes; 
+  String? notes;
+  String? imageUrl;
+  String? edition;
 
   BookComic({
     required this.id,
@@ -20,7 +22,9 @@ class BookComic {
     this.isWishlist = false,
     this.startDate,
     this.endDate,
-    this.notes
+    this.notes,
+    this.imageUrl,
+    this.edition,
   });
 
   factory BookComic.create({
@@ -31,7 +35,9 @@ class BookComic {
     bool isWishlist = false,
     DateTime? startDate,
     DateTime? endDate,
-    String? notes
+    String? notes,
+    String? imageUrl,
+    String? edition,
   }) {
     final uuid = const Uuid();
     return BookComic(
@@ -40,13 +46,15 @@ class BookComic {
       author: author,
       type: type,
       isReading: isReading,
-      isWishlist: isReading,
+      isWishlist: isWishlist,
       startDate: startDate,
-      endDate: startDate,
+      endDate: endDate,
       notes: notes,
+      imageUrl: imageUrl,
+      edition: edition,
     );
   }
-
+  
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -55,12 +63,14 @@ class BookComic {
       'type': type,
       'isReading': isReading,
       'isWishlist': isWishlist,
-      'startDate': startDate,
-      'endDate': endDate,
+      'startDate': startDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
       'notes': notes,
+      'imageUrl': imageUrl,
+      'edition': edition,
     };
   }
-
+  
   factory BookComic.fromJson(Map<String, dynamic> json) {
     return BookComic(
       id: json['id'] as String,
@@ -76,9 +86,11 @@ class BookComic {
           ? DateTime.tryParse(json['endDate'] as String)
           : null,
       notes: json['notes'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+      edition: json['edition'] as String?,
     );
   }
-
+  
   BookComic copyWith({
     String? id,
     String? title,
@@ -89,6 +101,8 @@ class BookComic {
     DateTime? startDate,
     DateTime? endDate,
     String? notes,
+    String? imageUrl,
+    String? edition,
   }) {
     return BookComic(
       id: id ?? this.id,
@@ -100,6 +114,8 @@ class BookComic {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       notes: notes ?? this.notes,
+      imageUrl: imageUrl ?? this.imageUrl,
+      edition: edition ?? this.edition,
     );
   }
 }

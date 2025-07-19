@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:gibidex/domain/entities/book_comic.dart';
 import 'package:gibidex/domain/usecases/add_book_comic.dart';
-import 'package:gibidex/domain/usecases/get_all_book_comics.dart';
+import 'package:gibidex/domain/usecases/get_all_book_comic.dart';
 import 'package:gibidex/domain/usecases/update_book_comic.dart';
 import 'package:gibidex/domain/usecases/delete_book_comic.dart';
-// import 'package:book_comic_manager/domain/usecases/sign_in_anonymously.dart'; // Removido
-// import 'package:book_comic_manager/domain/usecases/sign_out.dart'; // Removido
 import 'package:gibidex/domain/usecases/schedule_reading_reminder.dart';
 import 'package:gibidex/domain/usecases/cancel_reading_reminder.dart';
 import 'package:uuid/uuid.dart';
-// import 'package:firebase_auth/firebase_auth.dart'; // Removido
 
 class BookComicProvider with ChangeNotifier {
   final AddBookComic addBookComicUseCase;
@@ -19,11 +16,9 @@ class BookComicProvider with ChangeNotifier {
   final ScheduleReadingReminder scheduleReadingReminderUseCase;
   final CancelReadingReminder cancelReadingReminderUseCase;
   final Uuid uuid;
-  // final FirebaseAuth auth; // Removido
 
   List<BookComic> _bookComics = [];
   String _searchQuery = '';
-  // User? _currentUser; // Removido
 
   List<BookComic> get bookComics => _bookComics;
 
@@ -43,8 +38,6 @@ class BookComicProvider with ChangeNotifier {
         .toList();
   }
 
-  // User? get currentUser => _currentUser; // Removido
-
   BookComicProvider({
     required this.addBookComicUseCase,
     required this.getAllBookComicsUseCase,
@@ -52,20 +45,8 @@ class BookComicProvider with ChangeNotifier {
     required this.deleteBookComicUseCase,
     required this.scheduleReadingReminderUseCase,
     required this.cancelReadingReminderUseCase,
-    required this.uuid,
-    // required this.auth, // Removido
-  }); /* {
-    _listenToAuthStateChanges(); // Removido
-  } */
-
-  // void _listenToAuthStateChanges() { // Removido
-  //   auth.authStateChanges().listen((user) {
-  //     _currentUser = user;
-  //     print("Auth State Changed: User ID: ${user?.uid}");
-  //     loadBookComics();
-  //     notifyListeners();
-  //   });
-  // }
+    required this.uuid,    
+  }); 
 
   Future<void> loadBookComics() async {
     _bookComics = await getAllBookComicsUseCase.call();
@@ -77,7 +58,7 @@ class BookComicProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addNewBookComic(String title, String author, String type, bool isReading, bool isWishlist, String? notes) async {
+  Future<void> addNewBookComic(String title, String author, String type, bool isReading, bool isWishlist, String? notes, String? imageUrl, String? edition) async {
     final newBookComic = BookComic(
       id: uuid.v4(),
       title: title,
@@ -87,6 +68,8 @@ class BookComicProvider with ChangeNotifier {
       isWishlist: isWishlist,
       startDate: isReading ? DateTime.now() : null,
       notes: notes,
+      imageUrl: imageUrl,
+      edition: edition,
     );
     await addBookComicUseCase.call(newBookComic);
     await loadBookComics();

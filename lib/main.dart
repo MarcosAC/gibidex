@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gibidex/presentation/providers/book_comic_provider.dart';
+import 'package:gibidex/presentation/screens/home_screen.dart';
+import 'package:gibidex/presentation/services/notification_service.dart';
 import 'package:provider/provider.dart';
 
 // import 'package:gibidex/presentation/screens/home_screen.dart';
@@ -6,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:gibidex/di.dart';
 // import 'package:book_comic_manager/presentation/services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator(); // Configura todas as dependências com GetIt
 
@@ -14,8 +17,8 @@ void main() {
   await locator<NotificationService>().initializeNotifications();
 
   runApp(
-    ChangeNotifierProvider(// Usa ChangeNotifierProvider para expor o GibiDexProvider
-      create: (_) => locator<GibiDexProvider>()..loadGibiDex(),
+    ChangeNotifierProvider( // Usa ChangeNotifierProvider para expor o BookComicProvider
+      create: (_) => locator<BookComicProvider>()..loadBookComics(), // Obtém a instância do provider via GetIt
       child: const MyApp(),
     ),
   );

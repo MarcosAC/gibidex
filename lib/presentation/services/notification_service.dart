@@ -1,5 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
@@ -20,6 +22,23 @@ class NotificationService {
       iOS: initializationSettingsIOS,
     );
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        final bool? granted = await androidImplementation.requestExactAlarmsPermission();
+        if (granted != true) {
+          // Permissão não concedida. Você pode querer mostrar uma mensagem ao usuário
+          // e talvez direcioná-lo para as configurações do aplicativo.
+          print("Permissão para alarmes exatos não concedida.");
+          // Exemplo de como direcionar o usuário para as configurações (requer 'permission_handler')
+          // openAppSettings();
+        }
+      }
+    }
   }
 
   Future<void> scheduleNotification(

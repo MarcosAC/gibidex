@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:gibidex/domain/entities/book_comic.dart';
 import 'package:gibidex/presentation/providers/book_comic_provider.dart';
 import 'package:gibidex/presentation/screens/add_edit_book_comic_screen.dart';
-//import 'package:gibidex/presentation/widgets/book_comic_card.dart';
 import 'package:gibidex/presentation/widgets/book_comic_card.dart';
 import 'package:intl/intl.dart';
 
@@ -42,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     DateTime initialDate = DateTime(now.year, now.month, now.day, now.hour + 1, 0);
 
     DateTime? pickedDate = await showDatePicker(
-      context: dialogContext, // Usando o contexto capturado
+      context: dialogContext,
       initialDate: initialDate,
       firstDate: now,
       lastDate: DateTime(now.year + 5),
@@ -64,12 +63,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       },
     );
 
-    // Verifica se o widget ainda está montado após a primeira operação assíncrona
     if (!dialogContext.mounted) return;
 
     if (pickedDate != null) {
       TimeOfDay? pickedTime = await showTimePicker(
-        context: dialogContext, // Usando o contexto capturado
+        context: dialogContext,
         initialTime: TimeOfDay.fromDateTime(initialDate),
         builder: (context, child) {
           return Theme(
@@ -78,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 primary: Theme.of(context).hintColor,
                 onPrimary: Colors.white,
                 surface: Theme.of(context).cardColor,
-                onSurface: Colors.white70, // CORRIGIDO: de onOnSurface para onSurface
+                onSurface: Colors.white70, 
               ),
               textButtonTheme: TextButtonThemeData(
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).hintColor),
@@ -102,30 +100,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         );
 
         if (scheduledTime.isAfter(now)) {
-          Provider.of<BookComicProvider>(dialogContext, listen: false) // Usando o contexto capturado
+          Provider.of<BookComicProvider>(dialogContext, listen: false)
               .scheduleReminder(bookComic, scheduledTime);
-          
-          // Verifica novamente antes de usar ScaffoldMessenger
+
           if (!dialogContext.mounted) return;
-          ScaffoldMessenger.of(dialogContext).showSnackBar( // Usando o contexto capturado
+          ScaffoldMessenger.of(dialogContext).showSnackBar(
             SnackBar(
               content: Text(
                 'Lembrete agendado para ${bookComic.title} em ${DateFormat('dd/MM/yyyy HH:mm').format(scheduledTime)}',
-                style: Theme.of(dialogContext).textTheme.bodyMedium!.copyWith(color: Colors.white), // Usando o contexto capturado
+                style: Theme.of(dialogContext).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
-              backgroundColor: Theme.of(dialogContext).primaryColor, // Usando o contexto capturado
+              backgroundColor: Theme.of(dialogContext).primaryColor,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
-        } else {
-          // Verifica novamente antes de usar ScaffoldMessenger
+        } else {          
           if (!dialogContext.mounted) return;
-          ScaffoldMessenger.of(dialogContext).showSnackBar( // Usando o contexto capturado
+          ScaffoldMessenger.of(dialogContext).showSnackBar(
             SnackBar(
               content: Text(
                 'A data/hora do lembrete deve ser no futuro.',
-                style: Theme.of(dialogContext).textTheme.bodyMedium!.copyWith(color: Colors.white), // Usando o contexto capturado
+                style: Theme.of(dialogContext).textTheme.bodyMedium!.copyWith(color: Colors.white),
               ),
               backgroundColor: Colors.redAccent,
               behavior: SnackBarBehavior.floating,
@@ -286,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           padding: const EdgeInsets.all(8.0),
           itemCount: wishlistItems.length,
           itemBuilder: (context, index) {
-            final item = wishlistItems[index];
+            final item = wishlistItems[index];           
             return BookComicCard(
               bookComic: item,
               onToggleReading: (value) => provider.toggleReadingStatus(item),

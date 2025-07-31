@@ -116,10 +116,6 @@ class BookComicProvider with ChangeNotifier {
     await loadBookComics();
   }
 
-  // Métodos de Autenticação Removidos
-  // Future<void> signInAnonymously() async { ... }
-  // Future<void> signOut() async { ... }
-
   Future<void> scheduleReminder(BookComic bookComic, DateTime scheduledTime) async {
     await scheduleReadingReminderUseCase.call(bookComic, scheduledTime);
   }

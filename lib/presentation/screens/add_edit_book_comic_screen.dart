@@ -4,6 +4,12 @@ import 'package:gibidex/domain/entities/book_comic.dart';
 import 'package:gibidex/presentation/providers/book_comic_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:gibidex/presentation/services/book_cover_service.dart';
+import 'dart:async';
 
 class AddEditBookComicScreen extends StatefulWidget {
   final BookComic? bookComic;
@@ -14,7 +20,7 @@ class AddEditBookComicScreen extends StatefulWidget {
   State<AddEditBookComicScreen> createState() => _AddEditBookComicScreenState();
 }
 
-class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
+class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _authorController;
@@ -23,11 +29,18 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
   late bool _isWishlist;
   late TextEditingController _notesController;
   String? _editionController;
-  File? _imageFile; 
+  String? _selectedLocalImagePath;
+
+  static const String _tempImagePathKey = 'temp_image_path';
+  Timer? _debounceTimer;
+  bool _isSearchingCover = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);    
+
     _titleController = TextEditingController(text: widget.bookComic?.title ?? '');
     _authorController = TextEditingController(text: widget.bookComic?.author ?? '');
     _selectedType = widget.bookComic?.type;
@@ -36,35 +49,242 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
     _notesController = TextEditingController(text: widget.bookComic?.notes ?? '');
     _editionController = widget.bookComic?.edition;
 
-    if (widget.bookComic?.imageUrl != null) {
-      _imageFile = File(widget.bookComic!.imageUrl!);
+    _loadInitialImage();
+
+    _titleController.addListener(_onFormFieldsChanged);
+    _authorController.addListener(_onFormFieldsChanged);
+  }  
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);    
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {      
+      if (_selectedLocalImagePath != null) {
+        _saveTempImage(_selectedLocalImagePath);
+      }
     }
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _authorController.dispose();
-    _notesController.dispose();
-    super.dispose();
+  void _onFormFieldsChanged() {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+      if (_titleController.text.isNotEmpty && !_isSearchingCover) {
+        _performAutomaticSearch();
+      }
+    });
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: source);
+  void _performAutomaticSearch() async {
+    setState(() {
+      _isSearchingCover = true;
+    });
+    
+    final String? newImagePath = await _searchCoverAutomatically();
 
-    if (pickedFile != null) {
+    if (mounted) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        if (newImagePath != null) {
+          _selectedLocalImagePath = newImagePath;
+          _saveTempImage(_selectedLocalImagePath);         
+        } else {
+          if (widget.bookComic?.imageUrl == null || (widget.bookComic?.imageUrl != _selectedLocalImagePath)) {
+            _selectedLocalImagePath = null;
+          }
+        }
+        _isSearchingCover = false;
       });
     }
   }
 
-  void _saveBookComic() {
-    if (_formKey.currentState!.validate()) {
+  void _loadInitialImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? tempPath = prefs.getString(_tempImagePathKey);
+
+    String? imageToLoad;
+
+    if (widget.bookComic != null) {
+      if (widget.bookComic!.imageUrl != null && File(widget.bookComic!.imageUrl!).existsSync()) {
+        imageToLoad = widget.bookComic!.imageUrl!;        
+      } else {
+        imageToLoad = null;
+      }
+      if (tempPath != null) {
+        prefs.remove(_tempImagePathKey);
+      }
+    }    
+    else {
+      if (tempPath != null && File(tempPath).existsSync()) {
+        imageToLoad = tempPath;
+        prefs.remove(_tempImagePathKey);
+      } else {
+        imageToLoad = null;
+        if (tempPath != null) {
+          prefs.remove(_tempImagePathKey);
+        }
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _selectedLocalImagePath = imageToLoad;
+      });
+    }
+  }
+
+  void _saveTempImage(String? path) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (path != null) {
+      prefs.setString(_tempImagePathKey, path);
+    } else {
+      prefs.remove(_tempImagePathKey);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  @override
+  void didUpdateWidget(covariant AddEditBookComicScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _titleController.removeListener(_onFormFieldsChanged);
+    _authorController.removeListener(_onFormFieldsChanged);
+    _titleController.dispose();
+    _authorController.dispose();
+    _notesController.dispose();
+    _debounceTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<String?> _pickImage(ImageSource source) async {
+    PermissionStatus status;
+
+    if (source == ImageSource.gallery) {
+      if (await Permission.photos.request().isGranted || await Permission.storage.request().isGranted) {
+        status = PermissionStatus.granted;
+      } else {
+        status = PermissionStatus.denied;
+      }
+
+      if (!status.isGranted) {
+        if (status.isPermanentlyDenied) {
+          openAppSettings();
+        }
+        return null;
+      }
+    } else {
+      return null;
+    }
+
+    final picker = ImagePicker();
+    XFile? pickedFile;
+
+    try {
+      pickedFile = await picker.pickImage(source: source);
+    } catch (e) {
+      return null;
+    }
+
+    if (pickedFile != null) {
+      return pickedFile.path;
+    } else {
+      return null;
+    }
+  }
+
+  Future<String?> _downloadAndSaveImageFromUrl(String imageUrl) async {
+    HttpClient? client;
+    try {
+      client = HttpClient();
+      final request = await client.getUrl(Uri.parse(imageUrl));
+      final response = await request.close();
+
+      if (response.statusCode == 200) {
+        final Directory tempDir = await getTemporaryDirectory();
+        final String fileName = p.basename(Uri.parse(imageUrl).path);
+        final String uniqueFileName = '${DateTime.now().millisecondsSinceEpoch}_$fileName';
+        final File tempFile = File(p.join(tempDir.path, uniqueFileName));
+        await tempFile.writeAsBytes(await response.fold<List<int>>([], (prev, element) => prev..addAll(element)));
+        return tempFile.path;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    } finally {
+      client?.close();
+    }
+  }
+
+  Future<String?> _searchCoverAutomatically() async {
+    final String title = _titleController.text;
+    final String author = _authorController.text;
+
+    if (title.isEmpty) {
+      return null;
+    }
+    
+    final BookCoverService coverService = BookCoverService();
+    String? imageUrl = await coverService.searchBookCover(title, author);
+
+    if (imageUrl != null) {      
+      return await _downloadAndSaveImageFromUrl(imageUrl);
+    } else {
+      imageUrl = await coverService.searchWebImage('$title $author');
+
+      if (imageUrl != null) {
+        return await _downloadAndSaveImageFromUrl(imageUrl);
+      } else {
+        return null;
+      }
+    }
+  }
+
+  void _saveBookComic() async {
+    if (_isSaving) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      if (!_formKey.currentState!.validate()) {
+        return;
+      }
       _formKey.currentState!.save();
 
       final provider = Provider.of<BookComicProvider>(context, listen: false);
+
+      String? finalImageUrl = _selectedLocalImagePath;
+
+      if (finalImageUrl != null && File(finalImageUrl).existsSync()) {
+        final appDocDir = await getApplicationDocumentsDirectory();
+        final String fileName = p.basename(finalImageUrl);
+        final String persistentPath = p.join(appDocDir.path, fileName);
+
+        if (finalImageUrl != persistentPath) {
+          try {
+            final File newImage = await File(finalImageUrl).copy(persistentPath);
+            finalImageUrl = newImage.path;
+            _saveTempImage(null);
+          } catch (e) {
+            finalImageUrl = null;
+          }
+        } else {
+          _saveTempImage(null);
+        }
+      } else {
+        finalImageUrl = null;
+        _saveTempImage(null);
+      }
 
       if (widget.bookComic == null) {
         provider.addNewBookComic(
@@ -74,7 +294,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
           _isReading,
           _isWishlist,
           _notesController.text.isNotEmpty ? _notesController.text : null,
-          _imageFile?.path,
+          finalImageUrl,
           _editionController,
         );
       } else {
@@ -91,12 +311,20 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
           endDate: !_isReading && widget.bookComic!.isReading && widget.bookComic!.endDate == null
               ? DateTime.now()
               : widget.bookComic!.endDate,
-          imageUrl: _imageFile?.path,
+          imageUrl: finalImageUrl,
           edition: _editionController,
         );
         provider.updateExistingBookComic(updatedBookComic);
       }
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -114,53 +342,60 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            children: [
+            children: <Widget>[
               Center(
                 child: GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
+                  onTap: () async {
+                    final String? pickedResultPath = await showModalBottomSheet<String?>(
                       context: context,
-                      builder: (BuildContext contex) {
+                      builder: (BuildContext sheetContext) {
                         return SafeArea(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
+                            children: <Widget>[
                               ListTile(
                                 leading: const Icon(Icons.photo_library),
                                 title: const Text('Galeria'),
-                                onTap: () {
-                                  _pickImage(ImageSource.gallery);
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                              ListTile(
-                                leading: const Icon(Icons.camera_alt),
-                                title: const Text('Câmera'),
-                                onTap: () {
-                                  _pickImage(ImageSource.camera);
-                                  Navigator.of(context).pop();
+                                onTap: () async {
+                                  final String? imagePath = await _pickImage(ImageSource.gallery);
+                                  if (!sheetContext.mounted) return;
+                                  if (imagePath != null) {                                    
+                                    Navigator.of(sheetContext).pop(imagePath);
+                                  } else {
+                                    Navigator.of(sheetContext).pop(null);
+                                  }
                                 },
                               ),
                             ],
                           ),
                         );
-                      }
+                      },
                     );
+
+                    if (!mounted) return;
+                    if (pickedResultPath != null) {
+                      setState(() {
+                        _selectedLocalImagePath = pickedResultPath;
+                      });                      
+                      _saveTempImage(_selectedLocalImagePath);
+                    } 
                   },
                   child: CircleAvatar(
                     radius: 60,
                     backgroundColor: Theme.of(context).cardColor,
-                    backgroundImage: _imageFile != null
-                        ? FileImage(_imageFile!)
+                    backgroundImage: _selectedLocalImagePath != null && File(_selectedLocalImagePath!).existsSync()
+                        ? FileImage(File(_selectedLocalImagePath!))
                         : null,
-                    child: _imageFile == null
-                        ? Icon(
-                            Icons.camera_alt,
-                            size: 40,
-                            color: hintColor,
-                          )
-                        : null,
-                  ),                  
+                    child: _isSearchingCover
+                        ? CircularProgressIndicator(color: hintColor)
+                        : (_selectedLocalImagePath == null || !File(_selectedLocalImagePath!).existsSync()
+                            ? Icon(
+                                Icons.image_not_supported,
+                                size: 40,
+                                color: hintColor,
+                              )
+                            : null),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -181,7 +416,6 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               TextFormField(
                 controller: _authorController,
                 decoration: InputDecoration(
@@ -198,7 +432,6 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               DropdownButtonFormField<String>(
                 value: _selectedType,
                 decoration: InputDecoration(
@@ -227,7 +460,6 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                 },
               ),
               const SizedBox(height: 16),
-
               if (_selectedType == 'Gibi') ...[
                 TextFormField(
                   initialValue: _editionController,
@@ -240,7 +472,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     setState(() {
-                      _editionController = value.isNotEmpty ? value : null; 
+                      _editionController = value.isNotEmpty ? value : null;
                     });
                   },
                 ),
@@ -257,7 +489,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                     }
                   });
                 },
-                activeColor: const Color(0xFF27AE60),                
+                activeColor: const Color(0xFF27AE60),
                 inactiveTrackColor: Theme.of(context).cardColor.withAlpha(
                   ((Theme.of(context).cardColor.a * 255.0).round() * 0.6).round() & 0xff,
                 ),
@@ -282,7 +514,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                     }
                   });
                 },
-                activeColor: const Color(0xFF8E44AD),                
+                activeColor: const Color(0xFF8E44AD),
                 inactiveTrackColor: Theme.of(context).cardColor.withAlpha(
                   ((Theme.of(context).cardColor.a * 255.0).round() * 0.6).round() & 0xff,
                 ),
@@ -302,7 +534,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
                 decoration: InputDecoration(
                   labelText: 'Anotações do Aventureiro (Opcional)',
                   hintText: 'Ex: Personagens favoritos, trechos marcantes...',
-                  prefixIcon: Icon(Icons.description, color: hintColor), // Changed to description for a more common icon
+                  prefixIcon: Icon(Icons.description, color: hintColor),
                 ),
                 style: textTheme.bodyLarge,
                 maxLines: 3,
@@ -316,11 +548,22 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _saveBookComic,
-                child: Text(
-                  widget.bookComic == null ? 'Registrar Nova Crônica' : 'Atualizar Tomo',
-                  style: textTheme.labelLarge,
-                ),
+                onPressed: _isSaving ? null : () {
+                  _saveBookComic();
+                },
+                child: _isSaving
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        widget.bookComic == null ? 'Registrar Nova Crônica' : 'Atualizar Tomo',
+                        style: textTheme.labelLarge,
+                      ),
               ),
             ],
           ),

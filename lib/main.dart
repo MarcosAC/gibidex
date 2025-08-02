@@ -3,11 +3,7 @@ import 'package:gibidex/presentation/providers/book_comic_provider.dart';
 import 'package:gibidex/presentation/screens/home_screen.dart';
 import 'package:gibidex/presentation/services/notification_service.dart';
 import 'package:provider/provider.dart';
-
-// import 'package:gibidex/presentation/screens/home_screen.dart';
-// import 'package:gibidex/presentation/providers/book_comic_provider.dart';
 import 'package:gibidex/di.dart';
-// import 'package:book_comic_manager/presentation/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -146,28 +142,28 @@ class MyApp extends StatelessWidget {
 
         // Estilo dos Checkboxes e Switches
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.resolveWith<Color>(
-            (Set<MaterialState> states) {
-              if (states.contains(MaterialState.selected)) {
+          fillColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
                 return const Color(0xFF27AE60); // Verde para 'Lendo'
               }
               return const Color(0xFF7F8C8D); // Cinza para não selecionado
             },
           ),
-          checkColor: MaterialStateProperty.all(Colors.white),
+          checkColor: WidgetStateProperty.all(Colors.white),
         ),
         switchTheme: SwitchThemeData(
-          thumbColor: MaterialStateProperty.resolveWith<Color>(
-            (Set<MaterialState> states) {
-              if (states.contains(MaterialState.selected)) {
+          thumbColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
                 return const Color(0xFF8E44AD); // Roxo para 'Desejo'
               }
               return const Color(0xFF7F8C8D);
             },
           ),
-          trackColor: MaterialStateProperty.resolveWith<Color>(
-            (Set<MaterialState> states) {
-              if (states.contains(MaterialState.selected)) {
+          trackColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
                 return const Color(0x998E44AD); // Roxo translúcido
               }
               return const Color(0x997F8C8D);
@@ -200,6 +196,7 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

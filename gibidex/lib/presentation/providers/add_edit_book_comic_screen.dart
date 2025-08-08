@@ -85,7 +85,7 @@ class _AddEditBookComicScreenState extends State<AddEditBookComicScreen> with Wi
       setState(() {
         if (newImagePath != null) {
           _selectedLocalImagePath = newImagePath;
-          _saveTempImage(_selectedLocalImagePath);         
+          //_saveTempImage(_selectedLocalImagePath);         
         } else {
           if (widget.bookComic?.imageUrl == null || (widget.bookComic?.imageUrl != _selectedLocalImagePath)) {
             _selectedLocalImagePath = null;

@@ -1,6 +1,6 @@
 name: gibidex
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
 
@@ -12,25 +12,37 @@ dependencies:
     sdk: flutter
   provider: ^6.0.5
   uuid: ^4.4.0
-  get_it: ^7.6.0
+  get_it: ^8.2.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  flutter_local_notifications: ^16.3.2
-  intl: ^0.18.1
-  timezone: ^0.9.2
+  flutter_local_notifications: ^19.4.0
+  intl: ^0.20.2
+  timezone: ^0.10.1
   permission_handler: ^12.0.1
   image_picker: ^1.1.2
-
-  cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
+  flutter_native_splash: ^2.4.6
+  
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
-flutter:
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/splash_image.png
+  android: true
+  android_gravity: center
+  # Para Android 12+ (opcional, se quiser uma imagem diferente ou comportamento específico)
+  android_12:
+    image: assets/splash_image.png # Pode ser a mesma imagem ou uma otimizada para A12
+    color: "#ffffff"
+    android_gravity: center # Ou 'fill'
+
+flutter:  
   uses-material-design: true
   assets:
-    - assets/
+    - assets/  

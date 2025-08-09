@@ -21,20 +21,28 @@ dependencies:
   permission_handler: ^12.0.1
   image_picker: ^1.1.2
   shared_preferences: ^2.5.3
+  flutter_native_splash: ^2.4.6
   
   cupertino_icons: ^1.0.8
 
-  path_provider: any
-  path: any
-  http: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
 
-flutter:
-  
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/splash_image.png
+  android: true
+  android_gravity: center
+  # Para Android 12+ (opcional, se quiser uma imagem diferente ou comportamento específico)
+  android_12:
+    image: assets/splash_image.png # Pode ser a mesma imagem ou uma otimizada para A12
+    color: "#ffffff"
+    android_gravity: center # Ou 'fill'
+
+flutter:  
   uses-material-design: true
-  #assets:
-  #  - assets/  
+  assets:
+    - assets/  

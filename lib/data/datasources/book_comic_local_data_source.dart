@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:hive/hive.dart';
-import 'package:gibidex/core/app_constants.dart';
 import 'package:gibidex/domain/entities/book_comic.dart';
 
 abstract class BookComicLocalDataSource {

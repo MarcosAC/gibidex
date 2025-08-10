@@ -22,6 +22,7 @@ dependencies:
   image_picker: ^1.1.2
   shared_preferences: ^2.5.3
   flutter_native_splash: ^2.4.6
+  flutter_launcher_icons: ^0.14.4
   
   cupertino_icons: ^1.0.8
 
@@ -41,6 +42,11 @@ flutter_native_splash:
     image: assets/splash_image.png # Pode ser a mesma imagem ou uma otimizada para A12
     color: "#ffffff"
     android_gravity: center # Ou 'fill'
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+#  ios: true
+  image_path: "assets/ic_launcher.png"
 
 flutter:  
   uses-material-design: true

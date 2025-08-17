@@ -5,6 +5,7 @@ import 'package:gibidex/presentation/providers/book_comic_provider.dart';
 import 'package:gibidex/presentation/screens/add_edit_book_comic_screen.dart';
 import 'package:gibidex/presentation/widgets/book_comic_card.dart';
 import 'package:intl/intl.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // Importe o pacote do AdMob
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +18,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
+  BannerAd? _bannerAd;
+  bool _isBannerAdLoaded = false;
+
+  final String _adUnitId = 'ca-app-pub-3940256099942544/6300978111';
+
   @override
   void initState() {
     super.initState();
@@ -24,17 +30,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _searchController.addListener(() {
       Provider.of<BookComicProvider>(context, listen: false).updateSearchQuery(_searchController.text);
     });
+
+    _loadBannerAd();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: _adUnitId,
+      request: const AdRequest(),
+      // Para um banner na parte inferior, AdSize.fullBanner (468x60) ou AdSize.banner (320x50) são comuns.
+      // AdSize.adaptiveBanner é a opção mais flexível, ajustando-se à largura da tela.
+      size: AdSize.fullBanner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isBannerAdLoaded = true;
+          });
+          print('BannerAd carregado: ${ad.adUnitId}');
+        },
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+          print('BannerAd falhou ao carregar: $err');
+          setState(() {
+            _isBannerAdLoaded = false; // 
+          });
+        },
+        onAdOpened: (ad) => print('BannerAd aberto.'),
+        onAdClosed: (ad) => print('BannerAd fechado.'),
+        onAdImpression: (ad) => print('BannerAd impressão registrada.'),
+      ),
+    )..load(); 
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
   Future<void> _showScheduleReminderDialog(BuildContext context, BookComic bookComic) async {
-    // Captura o BuildContext antes de qualquer operação assíncrona
     final BuildContext dialogContext = context;
 
     DateTime now = DateTime.now();
@@ -76,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 primary: Theme.of(context).hintColor,
                 onPrimary: Colors.white,
                 surface: Theme.of(context).cardColor,
-                onSurface: Colors.white70, 
+                onSurface: Colors.white70,
               ),
               textButtonTheme: TextButtonThemeData(
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).hintColor),
@@ -87,7 +123,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         },
       );
 
-      // Verifica se o widget ainda está montado após a segunda operação assíncrona
       if (!dialogContext.mounted) return;
 
       if (pickedTime != null) {
@@ -115,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
-        } else {          
+        } else {
           if (!dialogContext.mounted) return;
           ScaffoldMessenger.of(dialogContext).showSnackBar(
             SnackBar(
@@ -174,12 +209,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      ),      
+      body: Column(
         children: [
-          _buildReadingList(context),
-          _buildWishlist(context),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildReadingList(context),
+                _buildWishlist(context),
+              ],
+            ),
+          ),          
+          if (_isBannerAdLoaded && _bannerAd != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SizedBox(
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -187,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddEditBookComicScreen(),
+              builder: (context) => const AddEditBookComicScreen(),
             ),
           );
         },
@@ -213,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           );
         } else if (readingItems.isEmpty && provider.bookComics.isNotEmpty) {
-           return Center(
+          return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
@@ -267,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           );
         } else if (wishlistItems.isEmpty && provider.bookComics.isNotEmpty) {
-           return Center(
+          return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
@@ -282,7 +332,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           padding: const EdgeInsets.all(8.0),
           itemCount: wishlistItems.length,
           itemBuilder: (context, index) {
-            final item = wishlistItems[index];           
+            final item = wishlistItems[index];
             return BookComicCard(
               bookComic: item,
               onToggleReading: (value) => provider.toggleReadingStatus(item),

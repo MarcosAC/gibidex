@@ -24,6 +24,7 @@ dependencies:
   flutter_native_splash: ^2.4.6
   flutter_launcher_icons: ^0.14.4
   http: ^1.5.0
+  google_mobile_ads: ^6.0.0
   
   cupertino_icons: ^1.0.8  
 

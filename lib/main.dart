@@ -4,9 +4,13 @@ import 'package:gibidex/presentation/screens/home_screen.dart';
 import 'package:gibidex/presentation/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'package:gibidex/di.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  MobileAds.instance.initialize();
+  
   await setupLocator(); // Configura todas as dependências com GetIt
 
   // Inicializa as notificações

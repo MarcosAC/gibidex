@@ -18,8 +18,12 @@
 
 ## 📱 Screenshots
 
+📸 *Telas reais do app em funcionamento*
+
 <div align="center">
-  <img src="https://example.com/screenshots/home.png" width="30%" alt="Tela Inicial"/>
-  <img src="https://example.com/screenshots/add.png" width="30%" alt="Adicionar Livro"/> 
-  <img src="https://example.com/screenshots/details.png" width="30%" alt="Detalhes"/>
+  <img src="screenshots/img4.jpg" width="250"/>
+  <img src="screenshots/img3.jpg" width="250"/>
+  <img src="screenshots/img1.jpg" width="250"/> 
+  <img src="screenshots/img2.jpg" width="250"/>
+  
 </div>

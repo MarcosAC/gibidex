@@ -1,16 +1,25 @@
-# gibidex
+# 📚 GibiDex - Seu Organizador Pessoal de Livros e HQs
 
-A new Flutter project.
+**GibiDex** é um aplicativo Flutter para organizar sua coleção de livros e histórias em quadrinhos, ajudando você a gerenciar o que já leu e o que deseja ler no futuro.
 
-## Getting Started
+## ✨ Funcionalidades
 
-This project is a starting point for a Flutter application.
+✔ **Catálogo completo** de livros e HQs  
+✔ **Filtros inteligentes**: Lendo, Desejados, Concluídos  
+✔ **Busca automática** de capas via Google Books API  
+✔ **Notificações** para lembrar de continuar leituras  
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠 Stack Tecnológica
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **Hive** - Banco de dados NoSQL local
+- **Provider** - Gerenciamento de estado
+- **Google Books API** - Integração com dados de livros
+- **flutter_local_notifications** - Sistema de lembretes
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 📱 Screenshots
+
+<div align="center">
+  <img src="https://example.com/screenshots/home.png" width="30%" alt="Tela Inicial"/>
+  <img src="https://example.com/screenshots/add.png" width="30%" alt="Adicionar Livro"/> 
+  <img src="https://example.com/screenshots/details.png" width="30%" alt="Detalhes"/>
+</div>
